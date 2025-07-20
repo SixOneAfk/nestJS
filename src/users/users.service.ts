@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';  
+import { NotFoundException } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class UsersService {
+    constructor(private database: DatabaseService) {}
+
     private users = [
         { "id": 1, "name": 'Alice', "email": 'alice@example.com', "role": 'INTERN' },
         { "id": 2, "name": 'Bob', "email": 'bob@example.com', "role": 'ENGINEER' },
@@ -15,17 +19,16 @@ export class UsersService {
     // add other methods as needed
 
 
-    findAll(role?: 'INTERN' | 'ENGINEER' | 'ADMIN') {
-        if (role) {
-            return this.users.filter(user => user.role === role);
-        }
-        return this.users;  
+async findAll(role?: 'INTERN' | 'ENGINEER' | 'ADMIN') {
+        return this.database.employee.findMany({
+            where: role ? { role } : undefined
+        });
     }
 
-    findOne(id: number) {
-        const user = this.users.find(user => user.id === id)
-
-        return user;
+    async findOne(id: number) {
+        return this.database.employee.findUnique({
+            where: { id }
+        });
     }
 
     create(createUserDto: CreateUserDto) {
@@ -41,7 +44,7 @@ export class UsersService {
     update(id: number, updatedUserDto: UpdateUserDto) {
         this.users = this.users.map(user => {
             if (user.id === id) {
-                return { ...user, ...updatedUserDto }  // ✅ Spread the updatedUser, not user
+                return { ...user, ...updatedUserDto } 
         }
             return user;
         })
